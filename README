@@ -1,0 +1,15 @@
+AvrMiniCopter - Android controller
+==============
+This is WIFI controller for AvrMiniCopter.
+
+REQUIREMENTS
+==============
+RPi with camera
+Android device with PS3 controller
+Android (API >= 12)
+
+
+TODO
+==============
+- code cleanup
+- video capturing and management
