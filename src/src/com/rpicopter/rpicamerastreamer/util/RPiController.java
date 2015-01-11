@@ -34,7 +34,7 @@ public class RPiController {
 	private Timer writerloop;
 	private DatagramChannel channel;
 	private long pingsent;
-	private int seq, recv_seq;
+	private short seq, recv_seq,expected;
 	private int [] response;
 	private int sampleSize = 10;
 	private int latency;
@@ -44,6 +44,8 @@ public class RPiController {
 	public int[] yprt;
 	private int mt,mv;
 	private boolean altHold;
+	
+	private int MSG_SIZE = 4;
 	
 	public RPiController(Callback c, byte []rpi_ip, int rpi_port) {
 		this.rpi_port = rpi_port;
@@ -57,10 +59,10 @@ public class RPiController {
 			status = 0;
 			rpi = InetAddress.getByAddress(rpi_ip);
 			
-			pingbuffer = new byte[5];
+			pingbuffer = new byte[MSG_SIZE];
 			pingbbuffer = ByteBuffer.wrap(pingbuffer);
 		    
-		    databuffer = new byte[20];
+		    databuffer = new byte[5*MSG_SIZE];
 		    databbuffer = ByteBuffer.wrap(databuffer);
 		    datarbuffer = new byte[64];
 
@@ -74,7 +76,7 @@ public class RPiController {
     
 	private void updatePingResponse(int seq, int lat) {
 		latency = lat;
-		response[seq % sampleSize] = lat;
+		response[Math.abs(seq) % sampleSize] = lat;
 		context.notify(1,null);
 	}
 	
@@ -99,24 +101,27 @@ public class RPiController {
 	}
 	
     private void ping() {
+    	//Log.d("SPING","SPING "+seq+" "+recv_seq);
     	if (recv_seq != (seq-1)) { //we did not receive previous response
     		updatePingResponse((seq-1),-1);
     	}
     	pingbbuffer.clear();
-	    pingbbuffer.put(0,(byte)2);
-	    pingbbuffer.putInt(1,seq);
+	    pingbbuffer.put(0,(byte)2); //keep-alive-ping
+	    pingbbuffer.putShort(1,(byte)0); //request ping
+	    pingbbuffer.putShort(2,(short)seq); //seq number
     	try {
     		pingsent = System.currentTimeMillis();
     		channel.write(pingbbuffer);
 		} catch (IOException e) {
 			//Log.d("PING","PING SEND ERROR "+e);
 		}
+    	expected = seq;
     	seq++;
+    	if (seq>32000) seq = -32000;  //there is discrepency in MAX short for Java and C so lets keep safe from the end
     }
     
-    private void readping(int c,ByteBuffer b) {    
-        recv_seq = b.getInt(c);
-        int expected = seq-1;
+    private void readping(int c,ByteBuffer b) {
+        recv_seq = b.getShort(c);
         long pingrecv = System.currentTimeMillis();
 		int lat = (int) (pingrecv-pingsent) + Math.abs(expected-recv_seq)*1000;
 		updatePingResponse(recv_seq,lat);
@@ -189,13 +194,18 @@ public class RPiController {
     	int c,len = channel.read(bbuf);
         c = 0;
         while (c<len) {
-        	int packet_type = bbuf.get(c) & 0xFF;
-        	c++;
-        	switch (packet_type) {
-        	case 0: readdata(c,bbuf); c+=3; break;
-        	case 1: readping(c,bbuf); c+=4; break;
-        	default: Log.d("DATA","DATA unknown packet type: "+packet_type);
+        	int control = bbuf.get(c);
+        	int packet_type = bbuf.get(c+1);
+        	
+        	if (control==2) readping(c+2,bbuf); //other control values are not used at the moment
+        	else readdata(c+1,bbuf);
+        	/*
+        	else switch (packet_type) {
+        		case 14: readdata(c+2,bbuf); break;
+        		default: Log.d("DATA","DATA unknown packet type: "+packet_type);
         	}
+        	*/
+        	c+=MSG_SIZE;
         }
         
     }
@@ -224,9 +234,9 @@ public class RPiController {
     }
     
     private void addMsg(int c, int t, int v) {    	
-	    databbuffer.put(c,(byte)1);
-        databbuffer.put(c+1,(byte)t);
-        databbuffer.putShort(c+2,(short)v);   
+	    databbuffer.put(c,(byte)1); //keep-alive
+        databbuffer.put(c+1,(byte)t); //type
+        databbuffer.putShort(c+2,(short)v); //value  
     }
     
     private void addQueue(int c) {
@@ -243,7 +253,8 @@ public class RPiController {
 
 	public void start() {
 		seq = 0;
-		recv_seq = -1;
+		recv_seq = (short) (seq-1);
+
 		latency = 0;
 		for (int i=0;i<sampleSize;i++) response[i] = 0;
 		
