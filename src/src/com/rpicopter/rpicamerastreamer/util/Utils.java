@@ -1,8 +1,10 @@
 package com.rpicopter.rpicamerastreamer.util;
 
 import java.io.*;
+import java.math.BigInteger;
 import java.net.*;
 import java.util.*;   
+
 import org.apache.http.conn.util.InetAddressUtils;
 
 public class Utils {
@@ -120,6 +122,26 @@ public class Utils {
         	
         } // for now eat exceptions
         return "";
+    }
+    
+    public static long ip_s2i(String sip) {
+    	int[] ip = new int[4];
+    	String[] parts = sip.split("\\.");
+    	for (int i = 0; i < 4; i++) {
+    	    ip[i] = Integer.parseInt(parts[3-i]);
+    	}
+    	
+    	long ipNumbers = 0;
+    	for (int i = 0; i < 4; i++) {
+    	    ipNumbers += ip[i] << (24 - (8 * i));
+    	}
+    	
+    	return ipNumbers;
+    }
+    
+    public static byte [] ip_i2b(int ip) {
+    	byte[] bytes = BigInteger.valueOf(ip).toByteArray();
+    	return bytes;
     }
 
 }

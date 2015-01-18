@@ -207,7 +207,7 @@ static void *app_function (void *userdata) {
 
   char pipeline[256];
   //sprintf(pipeline,"tcpserversrc host=%i.%i.%i.%i port=%i ! gdpdepay ! rtph264depay ! avdec_h264 ! videoconvert ! autovideosink\0",rpi_ip[0],rpi_ip[1],rpi_ip[2],rpi_ip[3],rpi_port);
-  sprintf(pipeline,"udpsrc address=%i.%i.%i.%i port=%i ! gdpdepay ! rtph264depay  ! avdec_h264 ! videoconvert ! autovideosink sync=false\0",rpi_ip[0],rpi_ip[1],rpi_ip[2],rpi_ip[3],rpi_port);
+  sprintf(pipeline,"udpsrc address=%i.%i.%i.%i port=%i caps=\"application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264\" ! rtph264depay  ! avdec_h264 ! videoconvert ! autovideosink sync=false",rpi_ip[0],rpi_ip[1],rpi_ip[2],rpi_ip[3],rpi_port);
 
   GST_DEBUG("PIPELINE : %s",pipeline);
 

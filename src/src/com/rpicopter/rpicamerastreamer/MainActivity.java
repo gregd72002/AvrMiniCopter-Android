@@ -8,6 +8,7 @@ import java.util.TimerTask;
 import org.freedesktop.gstreamer.GStreamer;
 
 import com.rpicopter.rpicamerastreamer.util.InfoBox;
+import com.rpicopter.rpicamerastreamer.util.LinkQuality;
 import com.rpicopter.rpicamerastreamer.util.RPiCam;
 import com.rpicopter.rpicamerastreamer.util.RPiController;
 import com.rpicopter.rpicamerastreamer.util.SystemUiHider;
@@ -18,6 +19,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
+import android.net.TrafficStats;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -52,6 +54,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback, Ca
     private native void nativeSurfaceFinalize();
     private native static boolean nativeClassInit(); // Initialize native class: cache Method IDs for callbacks
     private long native_custom_data;      // Native code will use this to keep private data
+    private int uid;
+    private long lastProbe,lastBytes;
+    private float currentSpeed;
     private InfoBox infobox;
     //private GameController gc;
     private boolean pipeline_started;
@@ -59,6 +64,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback, Ca
     
     private RPiController rpi;
     private RPiCam rpicam;
+    
+    private LinkQuality lq;
     
     /* GameController */
     private int gcdevid;
@@ -100,6 +107,10 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback, Ca
 		pipeline_started = false;
 		is_running = false;
 		
+		lq = new LinkQuality(this);
+		uid = android.os.Process.myUid();
+		lastProbe = System.currentTimeMillis();
+		lastBytes = TrafficStats.getUidRxBytes(uid) + TrafficStats.getUidTxBytes(uid);
         // Initialize GStreamer and warn if it fails
         try {
             GStreamer.init(this);
@@ -321,6 +332,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback, Ca
     	rpi = new RPiController(this,rpi_ip,rpi_p);
     	rpi.start();
 
+    	lq.setRpiIp((int) Utils.ip_s2i(rpi_ip_s));
     	//if (gc!=null) gc.stop();
     	//gc = new GameController();
     	//gc.start();
@@ -462,6 +474,19 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback, Ca
 			infobox.setLatency(rpi.getLatency());
 			infobox.setPingRate(rpi.getRate());
 			infobox.setAltitude(rpi.getAltitude());
+			lq.update();
+			infobox.setLQLevel(lq.getLevel());
+			infobox.setLQLinkSpeed(lq.getLinkSpeed());
+			
+			long probe = System.currentTimeMillis();
+			long bytes = TrafficStats.getUidTxBytes(uid);
+			bytes += TrafficStats.getUidRxBytes(uid);
+			currentSpeed = (float)(bytes-lastBytes)/(float)(probe-lastProbe); //kbytes per sec
+			lastProbe = probe;
+			lastBytes = bytes;
+			
+			infobox.setNetworkSpeed(currentSpeed);
+			
 		}
 		
 		updateUI();
@@ -509,9 +534,12 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback, Ca
 			handled = true;
 			key = event.getKeyCode();
 			switch (key) {
-				case 96: rpi.toggleAltHold(); break; //X
-				case 97: rpi.exitAltHold(); break; //X
+				case 96: rpi.startAltHold(); break; //X
+				case 97: rpi.exitAltHold(); break; //circle
+				case 99: break; //square
+				case 100: rpi.toggleMode(); break; //triangle
 				case 108: rpi.reset(); break; //start
+				case 109: rpi.flogsave(); break; //select
 				case 103: rpi.incAltitude(); break;//R1
 				case 105: rpi.decAltitude(); break;//R2
 			}

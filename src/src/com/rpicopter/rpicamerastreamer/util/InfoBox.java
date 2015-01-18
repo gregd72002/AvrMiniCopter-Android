@@ -7,21 +7,29 @@ public class InfoBox {
 	private int prate;
 	private int platency;
 	private int pthrottle;
+	private int plqs;
+	private int plql;
 	private int paltitude; //in cm
+	private float pns;
 	
 	public InfoBox() {
 		text = "";
 		visible = true;
 		prate = 0;
 		platency = 0;
+		plql = 0;
+		plqs = 0;
 	}
 
 	public String getText() {
 		float alt = paltitude/(float)100;
-		text = "Altitude: "+String.format("%.1f", alt)+"m\n\n";
-		text += "Throttle: "+pthrottle+"%\n\n";
-		text += "Last ping: "+platency+"ms\n\n";
-		text += "Ping rate:"+prate+"%\n";
+		text = "Altitude: "+String.format("%.1f", alt)+"m\n";
+		text += "Throttle: "+pthrottle+"%\n";
+		text += "Last ping: "+platency+"ms\n";
+		text += "Ping rate: "+prate+"%\n";
+		text += "L.Speed: "+plqs+"Mbps\n";
+		text += "TX/RX: "+String.format("%.1f", pns)+"KBps\n";
+		text += "L.RSSI: "+plql+"dBm";
 		return text;
 	}
 	
@@ -40,4 +48,17 @@ public class InfoBox {
 	public void setThrottle(int t) {
 		pthrottle = t;
 	}
+	
+	public void setLQLevel(int t) {
+		plql = t;
+	}
+	public void setLQLinkSpeed(int t) {
+		plqs = t;
+	}
+	
+	public void setNetworkSpeed(float t) {
+		pns = t;
+	}
+	
+	
 }

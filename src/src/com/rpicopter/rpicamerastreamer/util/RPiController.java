@@ -44,6 +44,7 @@ public class RPiController {
 	public int[] yprt;
 	private int mt,mv;
 	private boolean altHold;
+	private int flyMode;
 	
 	private int MSG_SIZE = 4;
 	
@@ -55,6 +56,7 @@ public class RPiController {
 		isRunning = false;
 		yprt = new int[4];
 		altHold = false;
+		flyMode = 0;
 		try {
 			status = 0;
 			rpi = InetAddress.getByAddress(rpi_ip);
@@ -289,18 +291,27 @@ public class RPiController {
 		readerloop.interrupt();
 	}
 	
-	public void toggleAltHold() {
-		altHold = !altHold;
-		queueMsg(15,altHold?1:0);
+	public void startAltHold() {
+		queueMsg(15,1);
+		altHold = true;
 	}
 	
 	public void exitAltHold() {
 		queueMsg(15,0);
 		altHold = false;
 	}
+	
+	public void toggleMode() {
+		flyMode = 1-flyMode;
+		queueMsg(3,flyMode);
+	}
 
 	public void reset() {
-		queueMsg(255,255);
+		queueMsg(0,1);
+	}
+	
+	public void flogsave() {
+		queueMsg(0,4);
 	}
 	
 	public void incAltitude() {
