@@ -44,7 +44,7 @@ import android.widget.Toast;
 public class MainActivity extends Activity implements SurfaceHolder.Callback, Callback  {
 	private String message;
     private native void nativeInit();     // Initialize native code, build pipeline, etc
-    private native void nativeConfig(byte[] ip, int port);
+    private native void nativeConfig(byte[] ip, int port, int stream_type);
     private native void nativeFinalize(); // Destroy pipeline and shutdown native code
     private native void nativeStart();     // Constructs PIPELINE
     private native void nativeStop();     // Destroys PIPELINE
@@ -70,6 +70,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback, Ca
     /* GameController */
     private int gcdevid;
     private int y_max,t_max,t_min,pr_max;
+    private int stream_type;
 	/**
 	 * Whether or not the system UI should be auto-hidden after
 	 * {@link #AUTO_HIDE_DELAY_MILLIS} milliseconds.
@@ -195,12 +196,18 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback, Ca
 		if (sharedPrefs.getString("rpi_cport", "")=="")
 			editor.putString("rpi_cport", "1035");
 
+		if (sharedPrefs.getString("t_min", "")=="")
+			editor.putString("t_min", "1000");
+		
 		if (sharedPrefs.getString("t_max", "")=="")
 			editor.putString("t_max", "1600");
 		if (sharedPrefs.getString("y_max", "")=="")
 			editor.putString("y_max", "45");
 		if (sharedPrefs.getString("pr_max", "")=="")
 			editor.putString("pr_max", "45");
+
+		if (sharedPrefs.getString("stream_type", "")=="")
+			editor.putString("stream_type", "0");
 		
 		editor.commit();
 	
@@ -294,7 +301,9 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback, Ca
     	String rpi_ip_s = sharedPrefs.getString("rpi_ip", "");
     	String rpi_p_s = sharedPrefs.getString("rpi_port", "");
     	String rpi_cp_s = sharedPrefs.getString("rpi_cport", "");
+    	String stream_type_s = sharedPrefs.getString("stream_type", "");
     	String t_max_s = sharedPrefs.getString("t_max", "");
+    	String t_min_s = sharedPrefs.getString("t_min", "");
     	String y_max_s = sharedPrefs.getString("y_max", "");
     	String pr_max_s = sharedPrefs.getString("pr_max", "");
     	int my_p;
@@ -302,10 +311,11 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback, Ca
     	int rpi_p,rpi_cp;
     	byte [] rpi_ip;
     	try {
+    		stream_type = Integer.parseInt(stream_type_s);
     		t_max = Integer.parseInt(t_max_s);
+    		t_min = Integer.parseInt(t_min_s);
     		y_max = Integer.parseInt(y_max_s);
     		pr_max = Integer.parseInt(pr_max_s);
-    		t_min = 1000;
     	} catch (Exception ex) {
     		setMessage("Error parsing config.");
     		Log.d("initializePlayer1","initializePlayer1"+ex);
@@ -324,7 +334,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback, Ca
     		Log.d("initializePlayer","initializePlayer"+ex);
     		return;
     	}
-    	nativeConfig(my_ip,my_p);
+    	nativeConfig(my_ip,my_p,stream_type);
     	if (rpicam!=null) rpicam.stop();
     	rpicam = new RPiCam(this,rpi_ip,rpi_cp,my_ip,my_p);
     	
@@ -470,7 +480,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback, Ca
 			Log.d("NOTIFY","NOTIFY "+msg);
 		}
 		
-		if (status==1) {
+		if (stream_type==0 && status==1) {
+			infobox.visible = true;
 			infobox.setLatency(rpi.getLatency());
 			infobox.setPingRate(rpi.getRate());
 			infobox.setAltitude(rpi.getAltitude());
@@ -487,6 +498,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback, Ca
 			
 			infobox.setNetworkSpeed(currentSpeed);
 			
+		} else {
+			infobox.visible = false;
 		}
 		
 		updateUI();
@@ -545,6 +558,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback, Ca
 			}
 			//notify(0,"BUTTON: "+key);
 		}
+		//return true;
 		if (handled) return true;
 		return super.dispatchKeyEvent(event);
 	}

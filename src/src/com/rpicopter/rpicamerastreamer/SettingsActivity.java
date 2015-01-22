@@ -70,6 +70,11 @@ public class SettingsActivity extends PreferenceActivity {
 		bindPreferenceSummaryToValue(findPreference("rpi_cport"));
 		bindPreferenceSummaryToValue(findPreference("my_ip"));
 		bindPreferenceSummaryToValue(findPreference("my_port"));
+		bindPreferenceSummaryToValue(findPreference("t_min"));
+		bindPreferenceSummaryToValue(findPreference("t_max"));
+		bindPreferenceSummaryToValue(findPreference("y_max"));
+		bindPreferenceSummaryToValue(findPreference("pr_max"));
+		bindPreferenceSummaryToValue(findPreference("stream_type"));
 
 /*
 		// Add 'notifications' preferences, and a corresponding header.

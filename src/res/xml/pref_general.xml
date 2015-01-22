@@ -34,6 +34,18 @@
         android:singleLine="true"/>
 
     
+           <EditTextPreference android:key="stream_type" android:title="FPV type"
+                        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:inputType="number"
+        android:singleLine="true"/>
+
+                   <EditTextPreference android:key="t_min" android:title="Throttle Min"
+                        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:inputType="number"
+        android:singleLine="true"/>
+                   
         <EditTextPreference android:key="t_max" android:title="Throttle Max"
                         android:maxLines="1"
         android:selectAllOnFocus="true"
@@ -45,6 +57,7 @@
         android:selectAllOnFocus="true"
         android:inputType="number"
         android:singleLine="true"/>
+       
       
               <EditTextPreference android:key="pr_max" android:title="Pitch/Roll Max"
                         android:maxLines="1"

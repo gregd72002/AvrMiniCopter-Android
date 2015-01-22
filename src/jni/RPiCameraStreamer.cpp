@@ -46,6 +46,7 @@ static jmethodID on_gstreamer_initialized_method_id;
 
 static unsigned char rpi_ip[4];
 static unsigned int rpi_port;
+static unsigned char stream_type;
 /*
  * Private methods
  */
@@ -205,9 +206,13 @@ static void *app_function (void *userdata) {
 
   /* Build pipeline */
 
-  char pipeline[256];
+  char pipeline[512];
   //sprintf(pipeline,"tcpserversrc host=%i.%i.%i.%i port=%i ! gdpdepay ! rtph264depay ! avdec_h264 ! videoconvert ! autovideosink\0",rpi_ip[0],rpi_ip[1],rpi_ip[2],rpi_ip[3],rpi_port);
-  sprintf(pipeline,"udpsrc address=%i.%i.%i.%i port=%i caps=\"application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264\" ! rtph264depay  ! avdec_h264 ! videoconvert ! autovideosink sync=false",rpi_ip[0],rpi_ip[1],rpi_ip[2],rpi_ip[3],rpi_port);
+
+  if (stream_type==1)
+	  sprintf(pipeline,"udpsrc address=%i.%i.%i.%i port=%i caps=\"application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264\" ! rtph264depay  ! avdec_h264 ! tee name=t ! queue ! videomixer name=m sink_0::xpos=0 sink_1::xpos=640 ! videoconvert ! autovideosink sync=false t. ! queue ! m.",rpi_ip[0],rpi_ip[1],rpi_ip[2],rpi_ip[3],rpi_port);
+  else
+	  sprintf(pipeline,"udpsrc address=%i.%i.%i.%i port=%i caps=\"application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264\" ! rtph264depay  ! avdec_h264 ! videoconvert ! autovideosink sync=false",rpi_ip[0],rpi_ip[1],rpi_ip[2],rpi_ip[3],rpi_port);
 
   GST_DEBUG("PIPELINE : %s",pipeline);
 
@@ -266,9 +271,10 @@ static void *app_function (void *userdata) {
  * Java Bindings
  */
 
-static void gst_native_config (JNIEnv* env, jobject thiz, jbyteArray arr, jint port) {
+static void gst_native_config (JNIEnv* env, jobject thiz, jbyteArray arr, jint port, jint type) {
 	int i;
 	rpi_port = port;
+	stream_type = type;
 	jsize len = (*env).GetArrayLength(arr);
 	jbyte *body = (*env).GetByteArrayElements(arr, 0);
 	for (i=0; i<len; i++)
@@ -404,7 +410,7 @@ static void gst_native_surface_finalize (JNIEnv *env, jobject thiz) {
 
 static JNINativeMethod native_methods[] = {
   { "nativeInit", "()V", (void *) gst_native_init},
-  { "nativeConfig", "([BI)V", (void *) gst_native_config},
+  { "nativeConfig", "([BII)V", (void *) gst_native_config},
   { "nativeFinalize", "()V", (void *) gst_native_finalize},
   { "nativeStart", "()V", (void *) gst_native_start},
   { "nativeStop", "()V", (void *) gst_native_stop},

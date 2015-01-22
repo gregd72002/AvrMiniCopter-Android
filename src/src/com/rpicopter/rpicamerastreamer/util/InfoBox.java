@@ -21,6 +21,14 @@ public class InfoBox {
 		plqs = 0;
 	}
 
+	public void show() {
+		
+	}
+	
+	public void hide() {
+		
+	}
+	
 	public String getText() {
 		float alt = paltitude/(float)100;
 		text = "Altitude: "+String.format("%.1f", alt)+"m\n";
