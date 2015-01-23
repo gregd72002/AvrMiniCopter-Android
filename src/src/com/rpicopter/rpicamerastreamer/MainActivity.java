@@ -44,7 +44,7 @@ import android.widget.Toast;
 public class MainActivity extends Activity implements SurfaceHolder.Callback, Callback  {
 	private String message;
     private native void nativeInit();     // Initialize native code, build pipeline, etc
-    private native void nativeConfig(byte[] ip, int port, int stream_type);
+    private native void nativeConfig(String pipeline);
     private native void nativeFinalize(); // Destroy pipeline and shutdown native code
     private native void nativeStart();     // Constructs PIPELINE
     private native void nativeStop();     // Destroys PIPELINE
@@ -334,7 +334,16 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback, Ca
     		Log.d("initializePlayer","initializePlayer"+ex);
     		return;
     	}
-    	nativeConfig(my_ip,my_p,stream_type);
+    	
+    	String pipeline;
+    	if (stream_type==1)
+    		pipeline = "udpsrc address="+my_ip_s+" port="+my_p_s+" caps=\"application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264\" ! rtph264depay  ! avdec_h264 ! tee name=t ! queue ! videomixer name=m sink_0::xpos=0 sink_1::xpos=640 ! videoconvert ! autovideosink sync=false t. ! queue ! m.";
+    	else
+    		pipeline = "udpsrc address="+my_ip_s+" port="+my_p_s+" caps=\"application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264\" ! rtph264depay  ! avdec_h264 ! videoconvert ! autovideosink sync=false";
+    	
+    	nativeConfig(pipeline);
+    	
+    	
     	if (rpicam!=null) rpicam.stop();
     	rpicam = new RPiCam(this,rpi_ip,rpi_cp,my_ip,my_p);
     	

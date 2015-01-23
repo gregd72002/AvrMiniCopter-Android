@@ -44,9 +44,7 @@ static jmethodID set_error_method_id;
 static jmethodID notify_state_method_id;
 static jmethodID on_gstreamer_initialized_method_id;
 
-static unsigned char rpi_ip[4];
-static unsigned int rpi_port;
-static unsigned char stream_type;
+static char pipeline[512];
 /*
  * Private methods
  */
@@ -190,6 +188,7 @@ static void check_initialization_complete (CustomData *data) {
   }
 }
 
+
 /* Main method for the native code. This is executed on its own thread. */
 static void *app_function (void *userdata) {
   JavaVMAttachArgs args;
@@ -205,7 +204,7 @@ static void *app_function (void *userdata) {
   g_main_context_push_thread_default(data->context);
 
   /* Build pipeline */
-
+/*
   char pipeline[512];
   //sprintf(pipeline,"tcpserversrc host=%i.%i.%i.%i port=%i ! gdpdepay ! rtph264depay ! avdec_h264 ! videoconvert ! autovideosink\0",rpi_ip[0],rpi_ip[1],rpi_ip[2],rpi_ip[3],rpi_port);
 
@@ -213,7 +212,7 @@ static void *app_function (void *userdata) {
 	  sprintf(pipeline,"udpsrc address=%i.%i.%i.%i port=%i caps=\"application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264\" ! rtph264depay  ! avdec_h264 ! tee name=t ! queue ! videomixer name=m sink_0::xpos=0 sink_1::xpos=640 ! videoconvert ! autovideosink sync=false t. ! queue ! m.",rpi_ip[0],rpi_ip[1],rpi_ip[2],rpi_ip[3],rpi_port);
   else
 	  sprintf(pipeline,"udpsrc address=%i.%i.%i.%i port=%i caps=\"application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264\" ! rtph264depay  ! avdec_h264 ! videoconvert ! autovideosink sync=false",rpi_ip[0],rpi_ip[1],rpi_ip[2],rpi_ip[3],rpi_port);
-
+*/
   GST_DEBUG("PIPELINE : %s",pipeline);
 
   data->pipeline = gst_parse_launch(pipeline,&error);
@@ -271,6 +270,20 @@ static void *app_function (void *userdata) {
  * Java Bindings
  */
 
+
+static void gst_native_config (JNIEnv *env, jobject thiz, jstring str) {
+	jboolean isCopy;
+	const char* utf_string;
+	utf_string = env->GetStringUTFChars(str, &isCopy);
+
+	sprintf(pipeline,"%s",utf_string);
+
+	if (isCopy == JNI_TRUE) {
+	    env->ReleaseStringUTFChars(str, utf_string);
+	}
+}
+
+/*
 static void gst_native_config (JNIEnv* env, jobject thiz, jbyteArray arr, jint port, jint type) {
 	int i;
 	rpi_port = port;
@@ -281,6 +294,7 @@ static void gst_native_config (JNIEnv* env, jobject thiz, jbyteArray arr, jint p
 		rpi_ip[i] = body[i];
 	(*env).ReleaseByteArrayElements(arr, body, 0);
 }
+*/
 
 /* Instruct the native code to create its internal data structure, pipeline and thread */
 static void gst_native_init (JNIEnv* env, jobject thiz) {
@@ -410,12 +424,14 @@ static void gst_native_surface_finalize (JNIEnv *env, jobject thiz) {
 
 static JNINativeMethod native_methods[] = {
   { "nativeInit", "()V", (void *) gst_native_init},
-  { "nativeConfig", "([BII)V", (void *) gst_native_config},
+//  { "nativeConfig", "([BII)V", (void *) gst_native_config},
+  { "nativeConfig", "(Ljava/lang/String;)V", (void *) gst_native_config},
   { "nativeFinalize", "()V", (void *) gst_native_finalize},
   { "nativeStart", "()V", (void *) gst_native_start},
   { "nativeStop", "()V", (void *) gst_native_stop},
   { "nativePlay", "()V", (void *) gst_native_play},
   { "nativeSurfaceInit", "(Ljava/lang/Object;)V", (void *) gst_native_surface_init},
+//  { "nativeTest", "(Ljava/lang/String;)V", (void *) gst_native_test},
   { "nativeSurfaceFinalize", "()V", (void *) gst_native_surface_finalize},
   { "nativeClassInit", "()Z", (void *) gst_native_class_init}
 };

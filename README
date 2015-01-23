@@ -19,10 +19,16 @@ INSTRUCTIONS
 ==============
 You should be able to use precompiled APK straight onto your Android device (there is no need for root access).
 
-Alternatively, you can compile it yourself:
-This is a Eclipse workspace (version 4.4.1)
+Alternatively, you can compile it yourself. For this there are two options:
+- use precompiled gstreamer and rpicamerastreamer libraries
+- compile the whole lot yourself
+
+To compile the libraries you will need NDK (android-ndk-r10d) and GStreamer for Android SDK (like 1.4.5 Debug).
+
+To compile the controler only (using pre-compiled libraries) you should be able to add the libraries to your project and do calls straught to them.
 
 Program was compiled using:
+- Eclipse version 4.4.1
 - SDK: 5.0.1 (Android 21)
 - NDK: android-ndk-r10d
 - GStreamer: 1.4.5 (DEBUG)
