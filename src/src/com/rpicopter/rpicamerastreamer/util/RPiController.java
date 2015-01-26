@@ -24,6 +24,7 @@ public class RPiController {
 	public String error;
 	public int status = 0;
 	private Callback context;
+	private int i;
 	private Timer pingtimer;
 	private byte [] pingbuffer,databuffer;
 	private byte [] datarbuffer;
@@ -41,6 +42,7 @@ public class RPiController {
 	private int altitude;
 	private boolean isRunning;
 	
+	private boolean hasController;
 	public int[] yprt;
 	private int mt,mv;
 	private boolean altHold;
@@ -51,6 +53,7 @@ public class RPiController {
 	public RPiController(Callback c, byte []rpi_ip, int rpi_port) {
 		this.rpi_port = rpi_port;
 		context = c;
+		hasController = false;
 		altitude = 0;
 		response = new int[sampleSize];
 		isRunning = false;
@@ -158,6 +161,8 @@ public class RPiController {
                 }
             }, 0, 50);//put here time 1000 milliseconds=1 second
     		
+    		setLog(4);
+    		
             while (isRunning) {
                 try {
                     dataselector.select();
@@ -223,11 +228,16 @@ public class RPiController {
     
     private void writedata() {
     	databbuffer.clear();
-    	addMsg(0,10,yprt[0]);
-    	addMsg(4,11,yprt[1]);
-    	addMsg(8,12,yprt[2]);
-    	addMsg(12,13,yprt[3]);
-    	addQueue(16);
+    	if (hasController) {
+    		addMsg(0,10,yprt[0]);
+    		addMsg(4,11,yprt[1]);
+    		addMsg(8,12,yprt[2]);
+    		addMsg(12,13,yprt[3]);
+        	addQueue(16);
+    	} else {
+    		addQueue(0);
+    	}
+    
     	try {
     		channel.write(databbuffer);
 		} catch (IOException e) {
@@ -310,6 +320,10 @@ public class RPiController {
 		queueMsg(0,1);
 	}
 	
+	public void setLog(int v) {
+		queueMsg(2,v);
+	}
+	
 	public void flogsave() {
 		queueMsg(0,4);
 	}
@@ -320,6 +334,14 @@ public class RPiController {
 	
 	public void decAltitude() {
 		queueMsg(16,-50);
+	}
+	
+	public void setController(boolean hasController) {
+		this.hasController = hasController;
+		if (!hasController) {
+			databuffer = new byte[MSG_SIZE];
+			databbuffer = ByteBuffer.wrap(databuffer);
+		}
 	}
 	
 }

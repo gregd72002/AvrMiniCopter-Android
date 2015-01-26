@@ -26,6 +26,10 @@ public class LinkQuality {
 		rpi_ip = r;
 	}
 	
+	public int getGW() {
+		return gw;
+	}
+	
 	public void update() {
 		WifiInfo info=wm.getConnectionInfo();
 		level = info.getRssi();	

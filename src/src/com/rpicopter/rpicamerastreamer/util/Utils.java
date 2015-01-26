@@ -124,9 +124,10 @@ public class Utils {
         return "";
     }
     
-    public static long ip_s2i(String sip) {
+    public static long ip_s2i(String sip) throws NumberFormatException {
     	int[] ip = new int[4];
     	String[] parts = sip.split("\\.");
+    	if (parts.length!=4) throw new NumberFormatException();
     	for (int i = 0; i < 4; i++) {
     	    ip[i] = Integer.parseInt(parts[3-i]);
     	}
@@ -139,9 +140,33 @@ public class Utils {
     	return ipNumbers;
     }
     
+    public static byte [] ip_s2b(String sip) throws NumberFormatException {
+    	int[] ip = new int[4];
+    	byte[] ip_b = new byte[4];
+    	String[] parts = sip.split("\\.");
+    	if (parts.length!=4) throw new NumberFormatException();
+    	for (int i = 0; i < 4; i++) {
+    		ip[i] = Integer.parseInt(parts[3-i]);
+    		ip_b[i] = (byte)ip[i];
+    	}
+    	
+    	return ip_b;
+    }
+    
+    public static byte [] ip_b2b(byte [] ip) {
+    	byte [] bytes = new byte[4];
+    	for (int i=0;i<4;i++) 
+    		bytes[i] = ip[3-i];
+    	return bytes;
+    }
+    
     public static byte [] ip_i2b(int ip) {
     	byte[] bytes = BigInteger.valueOf(ip).toByteArray();
     	return bytes;
+    }
+    
+    public static String ip_b2s(byte [] ip) {
+    	return ""+ (ip[3] & 0xFF) +"."+(ip[2] & 0xFF)+"."+(ip[1] & 0xFF)+"."+(ip[0] & 0xFF);
     }
 
 }

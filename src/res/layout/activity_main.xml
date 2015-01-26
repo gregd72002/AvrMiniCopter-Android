@@ -3,9 +3,12 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#0099cc"
+    android:id="@+id/main_frame_layout"
     tools:context="com.rpicopter.rpicamerastreamer.MainActivity" >
 
     <!--
+    
+    
          The primary full-screen view. This can be replaced with whatever view
          is needed to present your content, e.g. VideoView, SurfaceView,
          TextureView, etc.
@@ -17,6 +20,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" 
                     android:gravity="center"
+                    tools:context="com.rpicopter.rpicamerastreamer.MainActivity"
         android:keepScreenOn="true">
             
 

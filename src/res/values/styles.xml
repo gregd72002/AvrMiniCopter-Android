@@ -19,6 +19,7 @@
     </style>
 
     <style name="FullscreenTheme" parent="android:Theme.NoTitleBar">
+        <item name="android:windowNoTitle">true</item>
         <item name="android:windowContentOverlay">@null</item>
         <item name="android:windowBackground">@null</item>
         <item name="metaButtonBarStyle">@style/ButtonBar</item>

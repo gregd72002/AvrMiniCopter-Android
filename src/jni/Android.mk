@@ -2,6 +2,7 @@ LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 
+APP_PLATFORM := android-12
 LOCAL_MODULE    := RPiCameraStreamer
 LOCAL_SRC_FILES := RPiCameraStreamer.cpp
 LOCAL_SHARED_LIBRARIES := gstreamer_android

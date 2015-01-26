@@ -32,6 +32,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -123,6 +124,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback, Ca
         
 		setContentView(R.layout.activity_main);
 
+		//final FrameLayout fr = (FrameLayout) this.findViewById(R.id.main_frame_layout);
+		//fr.setForeground(null);
 		final TextView tv = (TextView) this.findViewById(R.id.textview_message);
 		tv.setVisibility(View.INVISIBLE);
 		final View controlsViewTop = findViewById(R.id.fullscreen_content_controls_top);
@@ -188,6 +191,15 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback, Ca
 		if (sharedPrefs.getString("my_port", "")=="")
 			editor.putString("my_port", "8888");
 		
+		String rpi_ip_s = sharedPrefs.getString("rpi_ip", "");
+		try {
+			Utils.ip_s2i(rpi_ip_s);
+		} catch (NumberFormatException ex) {
+			byte []ip = Utils.ip_i2b(lq.getGW());
+			editor.putString("rpi_ip", Utils.ip_b2s(ip));
+		}
+			
+		
 		//editor.putString("rpi_ip", "10.0.2.1");
 
 		if (sharedPrefs.getString("rpi_port", "")=="")
@@ -216,8 +228,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback, Ca
 		nativeInit();
 		
 		updateUI();
-		
-		initGC();
+		return;
+		//initGC();
 	}
 
 	@Override
@@ -323,12 +335,10 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback, Ca
     	}
     	try{
     		my_p = Integer.parseInt(my_p_s);
-    		InetAddress a = InetAddress.getByName(my_ip_s);
-    		my_ip = a.getAddress();
+    		my_ip = Utils.ip_s2b(my_ip_s);
     		rpi_cp = Integer.parseInt(rpi_cp_s);
     		rpi_p = Integer.parseInt(rpi_p_s);
-    		InetAddress b = InetAddress.getByName(rpi_ip_s);
-    		rpi_ip = b.getAddress();
+    		rpi_ip = Utils.ip_s2b(rpi_ip_s);
     	} catch (Exception ex) {
     		setMessage("Check preferances for IP address and port!");
     		Log.d("initializePlayer","initializePlayer"+ex);
@@ -343,15 +353,15 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback, Ca
     	
     	nativeConfig(pipeline);
     	
-    	
     	if (rpicam!=null) rpicam.stop();
-    	rpicam = new RPiCam(this,rpi_ip,rpi_cp,my_ip,my_p);
+    	rpicam = new RPiCam(this,Utils.ip_b2b(rpi_ip),rpi_cp,Utils.ip_b2b(my_ip),my_p);
     	
     	if (rpi!=null) rpi.stop();
-    	rpi = new RPiController(this,rpi_ip,rpi_p);
+    	rpi = new RPiController(this,Utils.ip_b2b(rpi_ip),rpi_p);
     	rpi.start();
 
     	lq.setRpiIp((int) Utils.ip_s2i(rpi_ip_s));
+    	
     	//if (gc!=null) gc.stop();
     	//gc = new GameController();
     	//gc.start();
@@ -540,6 +550,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback, Ca
 		ArrayList al = getGameControllerIds();
 		if (al.size()<=0) {
 			notify(0,"Game Controller not found!");
+			rpi.setController(true);
 			gcdevid = -1;
 		}
 		else {
