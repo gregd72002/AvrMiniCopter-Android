@@ -228,8 +228,10 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback, Ca
 		nativeInit();
 		
 		updateUI();
+		
+		initGC();
+		
 		return;
-		//initGC();
 	}
 
 	@Override
@@ -550,11 +552,12 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback, Ca
 		ArrayList al = getGameControllerIds();
 		if (al.size()<=0) {
 			notify(0,"Game Controller not found!");
-			rpi.setController(true);
+			rpi.setController(false);
 			gcdevid = -1;
 		}
 		else {
 			gcdevid = (int)al.get(0);
+			rpi.setController(true);
 		}
 	}
 	
