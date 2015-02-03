@@ -19,7 +19,7 @@ TODO
 
 INSTRUCTIONS
 ==============
-You should be able to use precompiled APK straight onto your Android device (there is no need for root access).
+You should be able to use precompiled APK straight onto your Android device (there is no need for root access). The application speaks directly to AVRSPI.
 
 Alternatively, you can compile it yourself. For this there are two options:
 - use precompiled gstreamer and rpicamerastreamer libraries
