@@ -33,14 +33,19 @@ public class RPiController {
 	private int rpi_port;
 	private Thread readerloop;
 	private Timer writerloop;
+	private int writecounter;
 	private DatagramChannel channel;
 	private long pingsent;
 	private short seq, recv_seq,expected;
 	private int [] response;
-	private int sampleSize = 10;
+	private int sampleSize = 10; //for ping ratio
 	private int latency;
 	private int altitude;
+	private int rssi;
+	private int linkSpeed;
 	private boolean isRunning;
+	private int avrstatus;
+	private int avrcode;
 	
 	private boolean hasController;
 	public int[] yprt;
@@ -55,6 +60,10 @@ public class RPiController {
 		context = c;
 		hasController = false;
 		altitude = 0;
+		avrstatus = 0;
+		avrcode = 0;
+		rssi = 0;
+		linkSpeed = 0;
 		response = new int[sampleSize];
 		isRunning = false;
 		yprt = new int[4];
@@ -101,8 +110,24 @@ public class RPiController {
 		return latency;
 	}
 	
+	public int getRSSI() {
+		return rssi;
+	}
+
+	public int getLinkSpeed() {
+		return linkSpeed;
+	}	
+	
 	public int getAltitude() {
 		return altitude;
+	}
+	
+	public int getAVRStatus() {
+		return avrstatus;
+	}
+	
+	public int getAVRCode() {
+		return avrcode;
 	}
 	
     private void ping() {
@@ -153,6 +178,7 @@ public class RPiController {
                 }
             }, 0, 1000);//put here time 1000 milliseconds=1 second
     		
+    		writecounter = 0;
     		writerloop = new Timer();
     		writerloop.scheduleAtFixedRate(new TimerTask() {
                 @Override
@@ -205,7 +231,7 @@ public class RPiController {
         	int packet_type = bbuf.get(c+1);
         	
         	if (control==2) readping(c+2,bbuf); //other control values are not used at the moment
-        	else readdata(c+1,bbuf);
+        	else readdata(control,c+1,bbuf);
         	/*
         	else switch (packet_type) {
         		case 14: readdata(c+2,bbuf); break;
@@ -217,23 +243,28 @@ public class RPiController {
         
     }
 
-    private void readdata(int c,ByteBuffer b) {
+    private void readdata(int control,int c,ByteBuffer b) {
     	int type = b.get(c) & 0xFF;
     	short value = b.getShort(c+1);
     	//Log.d("DATA","DATA recv t:"+type+" v:"+value);
-    	switch (type) {
-    		case 19: altitude = value; break;
+    	if (control==0 && type==19) altitude = value;
+    	if (control==3 && type==249) rssi = value;
+    	if (control==3 && type==248) linkSpeed = value;
+    	if (control==0 && type==255) {
+    		avrstatus = (value & 0xFF00) >> 8;
+        	avrcode = (byte)(value & 0xFF);
     	}
     }
     
     private void writedata() {
+    	writecounter++;
     	databbuffer.clear();
     	if (hasController) {
     		addMsg(0,10,yprt[0]);
     		addMsg(4,11,yprt[1]);
     		addMsg(8,12,yprt[2]);
     		addMsg(12,13,yprt[3]);
-        	addQueue(16);
+    		addQueue(16);
     	} else {
     		addQueue(0);
     	}
@@ -245,13 +276,13 @@ public class RPiController {
 		}
     }
     
-    private void addMsg(int c, int t, int v) {    	
+    private void addMsg(int c, int t, int v) {    // c - offset
 	    databbuffer.put(c,(byte)1); //keep-alive
         databbuffer.put(c+1,(byte)t); //type
         databbuffer.putShort(c+2,(short)v); //value  
     }
     
-    private void addQueue(int c) {
+    private void addQueue(int c) { //c - offset
     	if (mt>=0) {
     		addMsg(c,mt,mv);
     		mt = -1; mv = -1;
@@ -334,6 +365,10 @@ public class RPiController {
 	
 	public void decAltitude() {
 		queueMsg(16,-50);
+	}
+	
+	public void testFailsafe() {
+		queueMsg(25,0);
 	}
 	
 	public void setController(boolean hasController) {

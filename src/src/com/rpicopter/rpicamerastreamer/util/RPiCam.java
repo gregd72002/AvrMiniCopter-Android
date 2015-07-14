@@ -24,18 +24,19 @@ public class RPiCam {
 	private DatagramPacket packet;
 	private DatagramSocket socket;
 	
-	public RPiCam(Callback c, byte []rpi_ip, int rpi_port, byte []my_ip, int my_port) {
+	public RPiCam(Callback c, byte []rpi_ip, int rpi_port, byte []my_ip, int my_port,int stream_type) {
 		context = c;
 		try {
 			status = 0;
 			timer = new Timer();
 			InetAddress rpi = InetAddress.getByAddress(rpi_ip);
 			
-			buffer = new byte[9];
+			buffer = new byte[10];
 			byte_buffer = ByteBuffer.wrap(buffer);
 			byte_buffer.put((byte)0); //type offset 0
 			byte_buffer.put(my_ip); //ip offset 1
 			byte_buffer.putInt(my_port); //port offset 5
+			byte_buffer.put((byte)stream_type);
 			//byte_buffer.putInt(counter); //port offset 9
 
 		    packet = new DatagramPacket(

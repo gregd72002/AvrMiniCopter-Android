@@ -1,5 +1,7 @@
 package com.rpicopter.rpicamerastreamer;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Timer;
@@ -22,6 +24,7 @@ import android.content.SharedPreferences.Editor;
 import android.net.TrafficStats;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -59,6 +62,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback, Ca
     private long lastProbe,lastBytes;
     private float currentSpeed;
     private InfoBox infobox;
+    private boolean split_screen = false;
     //private GameController gc;
     private boolean pipeline_started;
     private boolean is_running;
@@ -220,7 +224,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback, Ca
 
 		if (sharedPrefs.getString("stream_type", "")=="")
 			editor.putString("stream_type", "0");
-		
+
 		editor.commit();
 	
 		initializePlayer();
@@ -284,6 +288,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback, Ca
 	}
 	
 	private void setError(final int type, final String _message) {
+		Log.d("setError","setError: "+type+" "+_message);
+		
 		if (type==1) {
 			pipeline_started = false;
 			stopStream();
@@ -316,6 +322,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback, Ca
     	String rpi_p_s = sharedPrefs.getString("rpi_port", "");
     	String rpi_cp_s = sharedPrefs.getString("rpi_cport", "");
     	String stream_type_s = sharedPrefs.getString("stream_type", "");
+    	split_screen = sharedPrefs.getBoolean("split_screen",false);
     	String t_max_s = sharedPrefs.getString("t_max", "");
     	String t_min_s = sharedPrefs.getString("t_min", "");
     	String y_max_s = sharedPrefs.getString("y_max", "");
@@ -347,16 +354,49 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback, Ca
     		return;
     	}
     	
-    	String pipeline;
-    	if (stream_type==1)
-    		pipeline = "udpsrc address="+my_ip_s+" port="+my_p_s+" caps=\"application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264\" ! rtph264depay  ! avdec_h264 ! tee name=t ! queue ! videomixer name=m sink_0::xpos=0 sink_1::xpos=640 ! videoconvert ! autovideosink sync=false t. ! queue ! m.";
-    	else
-    		pipeline = "udpsrc address="+my_ip_s+" port="+my_p_s+" caps=\"application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264\" ! rtph264depay  ! avdec_h264 ! videoconvert ! autovideosink sync=false";
-    	
+    	String pipeline = "";
+		
+		if (split_screen) {
+			pipeline = "udpsrc address="+my_ip_s+" port="+my_p_s+" caps=\"application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, framerate=90\" ! rtph264depay  ! decodebin ! tee name=t ! queue ! videomixer name=m sink_0::xpos=0 sink_1::xpos=640 ! autovideosink sync=false t. ! queue ! m.";
+		} else {
+			pipeline = "udpsrc address="+my_ip_s+" port="+my_p_s+" caps=\"application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, framerate=90\" ! rtph264depay ! decodebin ! autovideosink sync=false";			
+		}
+		
+
+/*
+    	switch (stream_type) {
+    		case 1: pipeline = "udpsrc address="+my_ip_s+" port="+my_p_s+" caps=\"application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264\" ! rtph264depay  ! avdec_h264 ! tee name=t ! queue ! videomixer name=m sink_0::xpos=0 sink_1::xpos=640 ! autovideosink sync=false t. ! queue ! m.";
+    		  	break;
+
+    		case 6: 
+    			File dir = this.getFilesDir();
+    			//dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+			try {
+				String d = dir.getCanonicalPath();
+				d = d+"/TESTVIDEO.h264";
+				//
+				d="/sdcard/TESTVIDEO.h264";
+				Log.d("PATH","WRITING TO: "+d);
+    			pipeline = "udpsrc address="+my_ip_s+" port="+my_p_s+" caps=\"application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264\" ! rtph264depay ! h264parse config-interval=1  ! tee name=t ! queue ! avdec_h264 ! videoconvert ! autovideosink sync=false t. ! queue ! mpegtsmux ! filesink location=/sdcard/TEST.ts";
+    			//		+ " avdec_h264 ! queue ! autovideosink sync=false splitter. ! queue ! filesink location=/sdcard/TEST.mp4";
+					
+    			//pipeline = "udpsrc address="+my_ip_s+" port="+my_p_s+" caps=\"application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264\" ! rtph264depay  ! filesink location="+d;
+			
+			} catch (IOException e) {
+				Log.d("PATH","PATH ",e);
+				e.printStackTrace();
+			}
+    			break;
+    		default:
+    			pipeline = "udpsrc address="+my_ip_s+" port="+my_p_s+" caps=\"application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, framerate=90\" ! rtph264depay  ! avdec_h264 ! autovideosink sync=false";
+    	}
+*/
+		
+    	Log.d("PIPELINE","PIPELINE "+pipeline);
     	nativeConfig(pipeline);
     	
     	if (rpicam!=null) rpicam.stop();
-    	rpicam = new RPiCam(this,Utils.ip_b2b(rpi_ip),rpi_cp,Utils.ip_b2b(my_ip),my_p);
+    	rpicam = new RPiCam(this,Utils.ip_b2b(rpi_ip),rpi_cp,Utils.ip_b2b(my_ip),my_p,stream_type);
     	
     	if (rpi!=null) rpi.stop();
     	rpi = new RPiController(this,Utils.ip_b2b(rpi_ip),rpi_p);
@@ -501,14 +541,22 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback, Ca
 			Log.d("NOTIFY","NOTIFY "+msg);
 		}
 		
-		if (stream_type==0 && status==1) {
+		if (!split_screen && status==1) {
 			infobox.visible = true;
 			infobox.setLatency(rpi.getLatency());
 			infobox.setPingRate(rpi.getRate());
 			infobox.setAltitude(rpi.getAltitude());
+			infobox.setStatus(rpi.getAVRStatus(),rpi.getAVRCode());
 			lq.update();
-			infobox.setLQLevel(lq.getLevel());
-			infobox.setLQLinkSpeed(lq.getLinkSpeed());
+			if (lq.isLocal()) {
+				infobox.setLQLevel(lq.getLevel());
+				infobox.setLQLinkSpeed(lq.getLinkSpeed());
+			}
+			else {
+				infobox.setLQLevel(rpi.getRSSI());
+				infobox.setLQLinkSpeed(rpi.getLinkSpeed());
+			}
+
 			
 			long probe = System.currentTimeMillis();
 			long bytes = TrafficStats.getUidTxBytes(uid);
@@ -572,7 +620,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback, Ca
 			switch (key) {
 				case 96: rpi.startAltHold(); break; //X
 				case 97: rpi.exitAltHold(); break; //circle
-				case 99: break; //square
+				case 99: rpi.testFailsafe(); break; //square
 				case 100: rpi.toggleMode(); break; //triangle
 				case 108: rpi.reset(); break; //start
 				case 109: rpi.flogsave(); break; //select

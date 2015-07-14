@@ -45,10 +45,12 @@ public class LinkQuality {
 		return level;
 	}
 	
+	public boolean isLocal() {
+		return (rpi_ip==gw);
+	}
+	
 	public int getLevel() {
 		return level;
-		//if (rpi_ip == gw) return level;
-		//return 0;
 	}
 
 }

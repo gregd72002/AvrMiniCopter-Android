@@ -11,6 +11,8 @@ public class InfoBox {
 	private int plql;
 	private int paltitude; //in cm
 	private float pns;
+	private int avrstatus;
+	private int avrcode;
 	
 	public InfoBox() {
 		text = "";
@@ -19,6 +21,8 @@ public class InfoBox {
 		platency = 0;
 		plql = 0;
 		plqs = 0;
+		avrstatus = 0;
+		avrcode = 0;
 	}
 
 	public void show() {
@@ -37,7 +41,8 @@ public class InfoBox {
 		text += "Ping rate: "+prate+"%\n";
 		text += "L.Speed: "+plqs+"Mbps\n";
 		text += "TX/RX: "+String.format("%.1f", pns)+"KBps\n";
-		text += "L.RSSI: "+plql+"dBm";
+		text += "L.RSSI: "+plql+"dBm\n";
+		text += "S: "+avrstatus+" C: "+avrcode;
 		return text;
 	}
 	
@@ -66,6 +71,11 @@ public class InfoBox {
 	
 	public void setNetworkSpeed(float t) {
 		pns = t;
+	}
+	
+	public void setStatus(int status, int code) {
+		avrstatus = status;
+		avrcode = code;
 	}
 	
 	

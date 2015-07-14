@@ -40,6 +40,8 @@
         android:inputType="number"
         android:singleLine="true"/>
 
+           <CheckBoxPreference android:key="split_screen" android:title="Split screen"/>
+                      
                    <EditTextPreference android:key="t_min" android:title="Throttle Min"
                         android:maxLines="1"
         android:selectAllOnFocus="true"
@@ -64,4 +66,5 @@
         android:selectAllOnFocus="true"
         android:inputType="number"
         android:singleLine="true"/>
+
 </PreferenceScreen>
