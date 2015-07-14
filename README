@@ -2,6 +2,8 @@ AvrMiniCopter - Android controller
 ==============
 This is WIFI controller for AvrMiniCopter with 2D and 3D FPV support.
 
+If you do not know AvrMiniCopter please refer to the wiki: https://github.com/rpicopter/AvrMiniCopter-wiki/wiki
+
 PS3 gamepad button mapping: https://github.com/rpicopter/AvrMiniCopter-Android/wiki/Controls
 
 REQUIREMENTS
